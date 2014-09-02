@@ -18,11 +18,11 @@ import org.bukkit.Location;
 * @author James Mortemore
 */
 
-public class v1_7 extends FakeDragon {
+public class v1_8 extends FakeDragon {
 	private Object dragon;
 	private int id;
 
-	public v1_7(String name, Location loc) {
+	public v1_8(String name, Location loc) {
 		super(name, loc);
 	}
 
@@ -137,7 +137,16 @@ public class v1_7 extends FakeDragon {
 		Object packet = null;
 		
 		try {
-			packet = PacketPlayOutEntityTeleport.getConstructor(new Class<?>[] { int.class, int.class, int.class, int.class, byte.class, byte.class }).newInstance(this.id, loc.getBlockX() * 32, loc.getBlockY() * 32, loc.getBlockZ() * 32, (byte) ((int) loc.getYaw() * 256 / 360), (byte) ((int) loc.getPitch() * 256 / 360));
+		    packet = PacketPlayOutEntityTeleport.getConstructor(new Class<?>[] {
+		            int.class, int.class, int.class, int.class, byte.class, byte.class, boolean.class })
+		            .newInstance(this.id, 
+		                    loc.getBlockX() * 32,
+		                    loc.getBlockY() * 32,
+		                    loc.getBlockZ() * 32,
+		                    (byte) ((int) loc.getYaw() * 256 / 360),
+		                    (byte) ((int) loc.getPitch() * 256 / 360),
+		                    (boolean)false);
+		    
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
 		} catch (SecurityException e) {

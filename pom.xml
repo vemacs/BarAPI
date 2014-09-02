@@ -69,6 +69,11 @@
 			<id>Plugin Metrics</id>
 			<url>http://repo.mcstats.org/content/repositories/public</url>
 		</repository>
+  		<repository>
+    		<id>comphenix-rep</id>
+    		<name>Comphenix Repository</name>
+    		<url>http://repo.comphenix.net/content/groups/public</url>
+  		</repository>
 	</repositories>
 	<dependencies>
 		<dependency> <!-- Bukkit implementation -->
@@ -77,6 +82,11 @@
 			<version>LATEST</version>
 			<scope>provided</scope>
 		</dependency>
+  		<dependency>
+    		<groupId>com.comphenix.protocol</groupId>
+    		<artifactId>ProtocolLib</artifactId>
+    		<version>3.1.0</version>
+  		</dependency>
 		<dependency> <!-- NMS blocks -->
 			<groupId>org.bukkit</groupId>
 			<artifactId>craftbukkit</artifactId>
