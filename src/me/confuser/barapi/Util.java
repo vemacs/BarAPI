@@ -36,7 +36,7 @@ public class Util {
 
         if (versions[0].equals("v1") && Integer.parseInt(versions[1]) == 7) {
             newProtocol = true;
-            fakeDragonClass = v1_7.class;
+            // fakeDragonClass = v1_7.class;
         }
 
         version = mcVersion + ".";

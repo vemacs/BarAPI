@@ -146,6 +146,9 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private void quit(Player player) {
         removeBar(player);
+        
+        // Incase they decide to switch versions lol.
+        handshakeListener.clear(player);
     }
 
     /**
@@ -417,7 +420,12 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private static void sendDragon(FakeDragon dragon, Player player) {
         Util.sendPacket(player, dragon.getMetaPacket(dragon.getWatcher()));
-        Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(0, -300, 0)));
+        
+        if(handshakeListener.hasNewProtocol(player)){
+            Util.sendPacket(player, dragon.getTeleportPacket(player.getEyeLocation().getDirection().multiply(20).toLocation(player.getWorld())));
+        } else {
+            Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(0, -300, 0)));
+        }
     }
 
     private static FakeDragon getDragon(Player player, String message) {
@@ -431,10 +439,15 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private static FakeDragon addDragon(Player player, String message) {
         boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
-        FakeDragon dragon = Util.newDragon(message, player.getLocation().add(0, -300, 0), ver_1_8);
+        FakeDragon dragon = null;
+        
+        if(ver_1_8){
+            dragon = Util.newDragon(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)), ver_1_8);
+        } else {
+            dragon = Util.newDragon(message, player.getLocation().add(0, -300, 0), ver_1_8);
+        }
 
         Util.sendPacket(player, dragon.getSpawnPacket());
-
         players.put(player.getUniqueId(), dragon);
 
         return dragon;
@@ -442,8 +455,13 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private static FakeDragon addDragon(Player player, Location loc, String message) {
         boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
-        FakeDragon dragon = Util.newDragon(message, loc.add(0, -300, 0), ver_1_8);
-
+        FakeDragon dragon = null;
+        if(ver_1_8){
+            Util.newDragon(message, player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)), ver_1_8);
+        } else {
+            dragon = Util.newDragon(message, loc.add(0, -300, 0), ver_1_8);
+        }
+        
         Util.sendPacket(player, dragon.getSpawnPacket());
 
         players.put(player.getUniqueId(), dragon);

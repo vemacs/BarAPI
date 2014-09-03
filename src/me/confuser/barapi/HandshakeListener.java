@@ -1,8 +1,9 @@
 package me.confuser.barapi;
 
 import java.util.HashSet;
-import java.util.Set;
+import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
@@ -14,11 +15,11 @@ import com.comphenix.protocol.events.PacketEvent;
 
 public class HandshakeListener extends PacketAdapter {
     
-    private static Set<String> newProtocolIPs;
+    private static HashSet<UUID> newProtocolIPs;
     
     public HandshakeListener(Plugin plugin) {
         super(plugin, ListenerPriority.MONITOR, PacketType.Handshake.Client.SET_PROTOCOL);
-        newProtocolIPs = new HashSet<String>();
+        newProtocolIPs = new HashSet<UUID>();
     }
 
     @Override
@@ -28,16 +29,18 @@ public class HandshakeListener extends PacketAdapter {
         int protocolVersion = handshakePacket.getProtocolVersion();
         
         if (protocolVersion > 5) { // 1.8
-            newProtocolIPs.add(getIP(event.getPlayer()));
+            Bukkit.getLogger().info("Set " + event.getPlayer().getUniqueId() + " protocol ID to 1.8");
+            newProtocolIPs.add(event.getPlayer().getUniqueId());
         }
     }
     
+    @Deprecated
     private String getIP(Player player) {
         return player.getAddress().getAddress().getHostAddress();
     }
     
     public boolean hasNewProtocol(Player player) {
-        return newProtocolIPs.contains(getIP(player));
+        return newProtocolIPs.contains(player);
     }
     
     public void clear(Player player) {
