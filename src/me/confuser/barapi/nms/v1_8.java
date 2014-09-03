@@ -18,7 +18,7 @@ import org.bukkit.Location;
 * @author James Mortemore
 */
 
-public class v1_8 extends FakeDragon {
+public class v1_8 extends FakeWither {
 	private Object dragon;
 	private int id;
 

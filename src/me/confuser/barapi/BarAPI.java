@@ -2,10 +2,10 @@ package me.confuser.barapi;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.UUID;
 
 import me.confuser.barapi.nms.FakeDragon;
+import me.confuser.barapi.nms.FakeWither;
 import net.gravitydevelopment.updater.Updater;
 
 import org.apache.commons.lang.Validate;
@@ -32,7 +32,8 @@ import com.comphenix.protocol.ProtocolLibrary;
  */
 
 public class BarAPI extends JavaPlugin implements Listener {
-    private static HashMap<UUID, FakeDragon> players = new HashMap<UUID, FakeDragon>();
+    private static HashMap<UUID, FakeDragon> dragon_players = new HashMap<UUID, FakeDragon>();
+    private static HashMap<UUID, FakeWither> wither_players = new HashMap<UUID, FakeWither>();
     private static HashMap<UUID, Integer> timers = new HashMap<UUID, Integer>();
 
     private static HandshakeListener handshakeListener;
@@ -80,7 +81,8 @@ public class BarAPI extends JavaPlugin implements Listener {
             quit(player);
         }
 
-        players.clear();
+        dragon_players.clear();
+        wither_players.clear();
 
         for (int timerID : timers.values()) {
             Bukkit.getScheduler().cancelTask(timerID);
@@ -88,7 +90,7 @@ public class BarAPI extends JavaPlugin implements Listener {
 
         timers.clear();
     }
-    
+
     public static HandshakeListener getHandshakeListener(){
         return handshakeListener;
     }
@@ -115,7 +117,7 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private void handleTeleport(final Player player, final Location loc) {
 
-        if (!hasBar(player))
+        if (!hasDragonBar(player) && !hasWitherBar(player))
             return;
 
         Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
@@ -123,22 +125,38 @@ public class BarAPI extends JavaPlugin implements Listener {
             @Override
             public void run() {
                 // Check if the player still has a dragon after the two ticks! ;)
-                if (!hasBar(player))
+                if (!hasDragonBar(player) && !hasWitherBar(player))
                     return;
 
-                FakeDragon oldDragon = getDragon(player, "");
+                if(dragon_players.containsKey(player.getUniqueId())){
+                    FakeDragon oldDragon = getDragon(player, "");
 
-                float health = oldDragon.health;
-                String message = oldDragon.name;
+                    float health = oldDragon.health;
+                    String message = oldDragon.name;
 
-                Util.sendPacket(player, getDragon(player, "").getDestroyPacket());
+                    Util.sendPacket(player, getDragon(player, "").getDestroyPacket());
 
-                players.remove(player.getUniqueId());
+                    dragon_players.remove(player.getUniqueId());
 
-                FakeDragon dragon = addDragon(player, loc, message);
-                dragon.health = health;
+                    FakeDragon dragon = addDragon(player, loc, message);
+                    dragon.health = health;
 
-                sendDragon(dragon, player);
+                    sendDragon(dragon, player);
+                } else if(wither_players.containsKey(player.getUniqueId())) {
+                    FakeWither oldWither = getWither(player, "");
+
+                    float health = oldWither.health;
+                    String message = oldWither.name;
+
+                    Util.sendPacket(player, getWither(player, "").getDestroyPacket());
+
+                    dragon_players.remove(player.getUniqueId());
+
+                    FakeWither wither = addWither(player, loc, message);
+                    wither.health = health;
+
+                    sendWither(wither, player);
+                }
             }
 
         }, 2L);
@@ -146,7 +164,7 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private void quit(Player player) {
         removeBar(player);
-        
+
         // Incase they decide to switch versions lol.
         handshakeListener.clear(player);
     }
@@ -181,14 +199,25 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            It will be cut to that size automatically.
      */
     public static void setMessage(Player player, String message) {
-        FakeDragon dragon = getDragon(player, message);
+        if(handshakeListener.hasNewProtocol(player)){
+            FakeWither wither = getWither(player, message);
 
-        dragon.name = cleanMessage(message);
-        dragon.health = FakeDragon.MAX_HEALTH;
+            wither.name = cleanMessage(message);
+            wither.health = FakeWither.MAX_HEALTH;
 
-        cancelTimer(player);
+            cancelTimer(player);
 
-        sendDragon(dragon, player);
+            sendWither(wither, player);
+        } else {
+            FakeDragon dragon = getDragon(player, message);
+
+            dragon.name = cleanMessage(message);
+            dragon.health = FakeDragon.MAX_HEALTH;
+
+            cancelTimer(player);
+
+            sendDragon(dragon, player);
+        }
     }
 
     /**
@@ -233,14 +262,25 @@ public class BarAPI extends JavaPlugin implements Listener {
     public static void setMessage(Player player, String message, float percent) {
         Validate.isTrue(0F <= percent && percent <= 100F, "Percent must be between 0F and 100F, but was: ", percent);
 
-        FakeDragon dragon = getDragon(player, message);
+        if(handshakeListener.hasNewProtocol(player)){
+            FakeWither wither = getWither(player, message);
 
-        dragon.name = cleanMessage(message);
-        dragon.health = (percent / 100f) * FakeDragon.MAX_HEALTH;
+            wither.name = cleanMessage(message);
+            wither.health = (percent / 100f) * FakeWither.MAX_HEALTH;
 
-        cancelTimer(player);
+            cancelTimer(player);
 
-        sendDragon(dragon, player);
+            sendWither(wither, player);
+        } else {
+            FakeDragon dragon = getDragon(player, message);
+
+            dragon.name = cleanMessage(message);
+            dragon.health = (percent / 100f) * FakeDragon.MAX_HEALTH;
+
+            cancelTimer(player);
+
+            sendDragon(dragon, player);
+        }
     }
 
     /**
@@ -289,33 +329,63 @@ public class BarAPI extends JavaPlugin implements Listener {
     public static void setMessage(final Player player, String message, int seconds) {
         Validate.isTrue(seconds > 0, "Seconds must be above 1 but was: ", seconds);
 
-        FakeDragon dragon = getDragon(player, message);
+        if(handshakeListener.hasNewProtocol(player)){
+            FakeWither wither = getWither(player, message);
 
-        dragon.name = cleanMessage(message);
-        dragon.health = FakeDragon.MAX_HEALTH;
+            wither.name = cleanMessage(message);
+            wither.health = FakeWither.MAX_HEALTH;
 
-        final float dragonHealthMinus = FakeDragon.MAX_HEALTH / seconds;
+            final float witherHealthMinus = FakeWither.MAX_HEALTH / seconds;
 
-        cancelTimer(player);
+            cancelTimer(player);
 
-        timers.put(player.getUniqueId(), Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+            timers.put(player.getUniqueId(), Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
 
-            @Override
-            public void run() {
-                FakeDragon drag = getDragon(player, "");
-                drag.health -= dragonHealthMinus;
+                @Override
+                public void run() {
+                    FakeWither with = getWither(player, "");
+                    with.health -= witherHealthMinus;
 
-                if (drag.health <= 1) {
-                    removeBar(player);
-                    cancelTimer(player);
-                } else {
-                    sendDragon(drag, player);
+                    if (with.health <= 1) {
+                        removeBar(player);
+                        cancelTimer(player);
+                    } else {
+                        sendWither(with, player);
+                    }
                 }
-            }
 
-        }, 20L, 20L).getTaskId());
+            }, 20L, 20L).getTaskId());
 
-        sendDragon(dragon, player);
+            sendWither(wither, player);
+        } else {
+            FakeDragon dragon = getDragon(player, message);
+
+            dragon.name = cleanMessage(message);
+            dragon.health = FakeDragon.MAX_HEALTH;
+
+            final float dragonHealthMinus = FakeDragon.MAX_HEALTH / seconds;
+
+            cancelTimer(player);
+
+            timers.put(player.getUniqueId(), Bukkit.getScheduler().runTaskTimer(plugin, new Runnable() {
+
+                @Override
+                public void run() {
+                    FakeDragon drag = getDragon(player, "");
+                    drag.health -= dragonHealthMinus;
+
+                    if (drag.health <= 1) {
+                        removeBar(player);
+                        cancelTimer(player);
+                    } else {
+                        sendDragon(drag, player);
+                    }
+                }
+
+            }, 20L, 20L).getTaskId());
+
+            sendDragon(dragon, player);
+        }
     }
 
     /**
@@ -325,9 +395,14 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            The player who should be checked.
      * @return True, if the player has a bar, False otherwise.
      */
-    public static boolean hasBar(Player player) {
-        return players.get(player.getUniqueId()) != null;
+    public static boolean hasDragonBar(Player player) {
+        return dragon_players.get(player.getUniqueId()) != null;
     }
+
+    public static boolean hasWitherBar(Player player) {
+        return wither_players.get(player.getUniqueId()) != null;
+    }
+
 
     /**
      * Removes the bar from the given player.<br>
@@ -337,14 +412,18 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            The player whose bar should be removed.
      */
     public static void removeBar(Player player) {
-        if (!hasBar(player))
+        if (!hasDragonBar(player) && !hasWitherBar(player))
             return;
 
-        Util.sendPacket(player, getDragon(player, "").getDestroyPacket());
-
-        players.remove(player.getUniqueId());
-
-        cancelTimer(player);
+        if(hasDragonBar(player)){
+            Util.sendPacket(player, getDragon(player, "").getDestroyPacket());
+            dragon_players.remove(player.getUniqueId());
+            cancelTimer(player);
+        } else if(hasWitherBar(player)){
+            Util.sendPacket(player, getWither(player, "").getDestroyPacket());
+            wither_players.remove(player.getUniqueId());
+            cancelTimer(player);
+        }
     }
 
     /**
@@ -358,18 +437,31 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            This value must be between 0F and 100F (inclusive).
      */
     public static void setHealth(Player player, float percent) {
-        if (!hasBar(player))
+        if (!hasDragonBar(player) && !hasWitherBar(player))
             return;
 
-        FakeDragon dragon = getDragon(player, "");
-        dragon.health = (percent / 100f) * FakeDragon.MAX_HEALTH;
+        if(hasDragonBar(player)){
+            FakeDragon dragon = getDragon(player, "");
+            dragon.health = (percent / 100f) * FakeDragon.MAX_HEALTH;
 
-        cancelTimer(player);
+            cancelTimer(player);
 
-        if (percent == 0) {
-            removeBar(player);
-        } else {
-            sendDragon(dragon, player);
+            if (percent == 0) {
+                removeBar(player);
+            } else {
+                sendDragon(dragon, player);
+            }
+        } else if(hasWitherBar(player)){
+            FakeWither wither = getWither(player, "");
+            wither.health = (percent / 100f) * FakeWither.MAX_HEALTH;
+
+            cancelTimer(player);
+
+            if (percent == 0) {
+                removeBar(player);
+            } else {
+                sendWither(wither, player);
+            }
         }
     }
 
@@ -382,10 +474,15 @@ public class BarAPI extends JavaPlugin implements Listener {
      *         If the player has no bar, this method returns -1.
      */
     public static float getHealth(Player player) {
-        if (!hasBar(player))
+        if (!hasDragonBar(player) && !hasWitherBar(player))
             return -1;
 
-        return getDragon(player, "").health;
+        if(hasDragonBar(player))
+            return getDragon(player, "").health;
+        else if(hasWitherBar(player))
+            return getWither(player, "").health;
+        
+        return -1;
     }
 
     /**
@@ -397,10 +494,15 @@ public class BarAPI extends JavaPlugin implements Listener {
      *         If the player has no bar, this method returns an empty string.
      */
     public static String getMessage(Player player) {
-        if (!hasBar(player))
+        if (!hasDragonBar(player) && !hasWitherBar(player))
             return "";
 
-        return getDragon(player, "").name;
+        if(hasDragonBar(player))
+            return getDragon(player, "").name;
+        else if(hasWitherBar(player))
+            return getWither(player, "").name;
+        
+        return "";
     }
 
     private static String cleanMessage(String message) {
@@ -420,35 +522,71 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private static void sendDragon(FakeDragon dragon, Player player) {
         Util.sendPacket(player, dragon.getMetaPacket(dragon.getWatcher()));
-        
+
         if(handshakeListener.hasNewProtocol(player)){
-            Util.sendPacket(player, dragon.getTeleportPacket(player.getEyeLocation().getDirection().multiply(20).toLocation(player.getWorld())));
+            Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(player.getEyeLocation().getDirection().multiply(20))));
         } else {
             Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(0, -300, 0)));
         }
     }
 
+    private static void sendWither(FakeWither wither, Player player) {
+        Util.sendPacket(player, wither.getMetaPacket(wither.getWatcher()));
+
+        if(handshakeListener.hasNewProtocol(player)){
+            Util.sendPacket(player, wither.getTeleportPacket(player.getLocation().add(player.getEyeLocation().getDirection().multiply(20))));
+        } else {
+            Util.sendPacket(player, wither.getTeleportPacket(player.getLocation().add(0, -300, 0)));
+        }
+    }
+
     private static FakeDragon getDragon(Player player, String message) {
-        if (hasBar(player)) {
-            return players.get(player.getUniqueId());
+        if (dragon_players.containsKey(player.getUniqueId())) {
+            return dragon_players.get(player.getUniqueId());
         } else {
             return addDragon(player, cleanMessage(message));
         }
     }
 
+    private static FakeWither getWither(Player player, String message) {
+        if (wither_players.containsKey(player.getUniqueId())) {
+            return wither_players.get(player.getUniqueId());
+        } else {
+            return addWither(player, cleanMessage(message));
+        }
+    }
+
+    private static FakeWither addWither(Player player, String message) {
+        FakeWither wither = null;
+        wither = Util.newWither(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)));
+        Util.sendPacket(player, wither.getSpawnPacket());
+        wither_players.put(player.getUniqueId(), wither);
+        return wither;
+    }
+
+    private static FakeWither addWither(Player player, Location loc, String message) {
+        FakeWither wither = null;
+        // loc.add ?
+        wither = Util.newWither(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)));
+        Util.sendPacket(player, wither.getSpawnPacket());
+        wither_players.put(player.getUniqueId(), wither);
+        return wither;
+    }
 
     private static FakeDragon addDragon(Player player, String message) {
         boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
         FakeDragon dragon = null;
-        
-        if(ver_1_8){
-            dragon = Util.newDragon(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)), ver_1_8);
-        } else {
-            dragon = Util.newDragon(message, player.getLocation().add(0, -300, 0), ver_1_8);
-        }
+        FakeWither wither = null;
 
-        Util.sendPacket(player, dragon.getSpawnPacket());
-        players.put(player.getUniqueId(), dragon);
+        if(ver_1_8){
+            wither = Util.newWither(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)));
+            Util.sendPacket(player, wither.getSpawnPacket());
+            wither_players.put(player.getUniqueId(), wither);
+        } else {
+            dragon = Util.newDragon(message, player.getLocation().add(0, -300, 0));
+            Util.sendPacket(player, dragon.getSpawnPacket());
+            dragon_players.put(player.getUniqueId(), dragon);
+        }
 
         return dragon;
     }
@@ -456,15 +594,17 @@ public class BarAPI extends JavaPlugin implements Listener {
     private static FakeDragon addDragon(Player player, Location loc, String message) {
         boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
         FakeDragon dragon = null;
-        if(ver_1_8){
-            Util.newDragon(message, player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)), ver_1_8);
-        } else {
-            dragon = Util.newDragon(message, loc.add(0, -300, 0), ver_1_8);
-        }
-        
-        Util.sendPacket(player, dragon.getSpawnPacket());
+        FakeWither wither = null;
 
-        players.put(player.getUniqueId(), dragon);
+        if(ver_1_8){
+            wither = Util.newWither(message,player.getLocation().add(player.getEyeLocation().getDirection().multiply(20)));
+            Util.sendPacket(player, wither.getSpawnPacket());
+            wither_players.put(player.getUniqueId(), wither);
+        } else {
+            dragon = Util.newDragon(message, player.getLocation().add(0, -300, 0));
+            Util.sendPacket(player, dragon.getSpawnPacket());
+            dragon_players.put(player.getUniqueId(), dragon);
+        }
 
         return dragon;
     }

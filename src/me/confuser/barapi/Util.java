@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import me.confuser.barapi.nms.FakeDragon;
-import me.confuser.barapi.nms.v1_6;
+import me.confuser.barapi.nms.FakeWither;
 import me.confuser.barapi.nms.v1_7;
 import me.confuser.barapi.nms.v1_8;
 
@@ -42,41 +42,46 @@ public class Util {
         version = mcVersion + ".";
     }
 
-    public static FakeDragon newDragon(String message, Location loc, boolean ver_1_8) {
+    public static FakeWither newWither(String message, Location loc) {
+        FakeWither fakeWither = null;
+        
+        try {
+            fakeWither = (FakeWither) new_fakeDragonClass.getConstructor(String.class, Location.class).newInstance(message, loc);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        
+        return fakeWither;
+
+    }
+
+    public static FakeDragon newDragon(String message, Location loc) {
         FakeDragon fakeDragon = null;
 
-        if(ver_1_8){
-            try {
-                fakeDragon = (FakeDragon) new_fakeDragonClass.getConstructor(String.class, Location.class).newInstance(message, loc);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
-        } else {
-            try {
-                fakeDragon = (FakeDragon) fakeDragonClass.getConstructor(String.class, Location.class).newInstance(message, loc);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-            } catch (SecurityException e) {
-                e.printStackTrace();
-            } catch (InstantiationException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (InvocationTargetException e) {
-                e.printStackTrace();
-            } catch (NoSuchMethodException e) {
-                e.printStackTrace();
-            }
+        try {
+            fakeDragon = (FakeDragon) fakeDragonClass.getConstructor(String.class, Location.class).newInstance(message, loc);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
         }
 
         return fakeDragon;
