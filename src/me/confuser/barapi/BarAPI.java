@@ -395,6 +395,11 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            The player who should be checked.
      * @return True, if the player has a bar, False otherwise.
      */
+    @Deprecated
+    public static boolean hasBar(Player player){
+        return hasDragonBar(player) || hasWitherBar(player);
+    }
+    
     public static boolean hasDragonBar(Player player) {
         return dragon_players.get(player.getUniqueId()) != null;
     }
