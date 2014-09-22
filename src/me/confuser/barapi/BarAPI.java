@@ -21,6 +21,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.mcstats.MetricsLite;
 
 /**
@@ -36,6 +37,7 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private static BarAPI plugin;
 
+    @Override
     public void onEnable() {
         getConfig().options().copyDefaults(true);
         saveConfig();
@@ -69,8 +71,21 @@ public class BarAPI extends JavaPlugin implements Listener {
 
             }, 30L, 300L);
         }
+
+        // Continuously fix for 1.8 clients
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                for (Player p : getServer().getOnlinePlayers()) {
+                    if (Util.hasNewProtocol(p)) {
+                        handleTeleport(p, p.getLocation());
+                    }
+                }
+            }
+        }.runTaskTimer(this, 0, 10);
     }
 
+    @Override
     public void onDisable() {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             quit(player);
