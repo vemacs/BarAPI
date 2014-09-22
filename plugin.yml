@@ -2,4 +2,3 @@ main: me.confuser.barapi.BarAPI
 name: ${project.name}
 version: ${project.version}
 description: ${project.description}
-depend: [ProtocolLib]

@@ -12,6 +12,7 @@ import me.confuser.barapi.nms.v1_8;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -203,4 +204,8 @@ public class Util {
         return equal;
     }
 
+    public static boolean hasNewProtocol(Player player) {
+        return ((CraftPlayer) player).getHandle().
+                playerConnection.networkManager.getVersion() > 5;
+    }
 }

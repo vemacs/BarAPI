@@ -23,8 +23,6 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.mcstats.MetricsLite;
 
-import com.comphenix.protocol.ProtocolLibrary;
-
 /**
  * Allows plugins to safely set a health bar message.
  * 
@@ -36,7 +34,6 @@ public class BarAPI extends JavaPlugin implements Listener {
     private static HashMap<UUID, FakeWither> wither_players = new HashMap<UUID, FakeWither>();
     private static HashMap<UUID, Integer> timers = new HashMap<UUID, Integer>();
 
-    private static HandshakeListener handshakeListener;
     private static BarAPI plugin;
 
     public void onEnable() {
@@ -53,8 +50,6 @@ public class BarAPI extends JavaPlugin implements Listener {
             // Failed to submit the stats :-(
         }
 
-        handshakeListener = new HandshakeListener(this);
-        ProtocolLibrary.getProtocolManager().addPacketListener(handshakeListener);
         getServer().getPluginManager().registerEvents(this, this);
 
         getLogger().info("Loaded");
@@ -89,10 +84,6 @@ public class BarAPI extends JavaPlugin implements Listener {
         }
 
         timers.clear();
-    }
-
-    public static HandshakeListener getHandshakeListener(){
-        return handshakeListener;
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -164,9 +155,6 @@ public class BarAPI extends JavaPlugin implements Listener {
 
     private void quit(Player player) {
         removeBar(player);
-
-        // Incase they decide to switch versions lol.
-        handshakeListener.clear(player);
     }
 
     /**
@@ -199,7 +187,7 @@ public class BarAPI extends JavaPlugin implements Listener {
      *            It will be cut to that size automatically.
      */
     public static void setMessage(Player player, String message) {
-        if(handshakeListener.hasNewProtocol(player)){
+        if(Util.hasNewProtocol(player)){
             FakeWither wither = getWither(player, message);
 
             wither.name = cleanMessage(message);
@@ -262,7 +250,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     public static void setMessage(Player player, String message, float percent) {
         Validate.isTrue(0F <= percent && percent <= 100F, "Percent must be between 0F and 100F, but was: ", percent);
 
-        if(handshakeListener.hasNewProtocol(player)){
+        if(Util.hasNewProtocol(player)){
             FakeWither wither = getWither(player, message);
 
             wither.name = cleanMessage(message);
@@ -329,7 +317,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     public static void setMessage(final Player player, String message, int seconds) {
         Validate.isTrue(seconds > 0, "Seconds must be above 1 but was: ", seconds);
 
-        if(handshakeListener.hasNewProtocol(player)){
+        if(Util.hasNewProtocol(player)){
             FakeWither wither = getWither(player, message);
 
             wither.name = cleanMessage(message);
@@ -528,7 +516,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     private static void sendDragon(FakeDragon dragon, Player player) {
         Util.sendPacket(player, dragon.getMetaPacket(dragon.getWatcher()));
 
-        if(handshakeListener.hasNewProtocol(player)){
+        if(Util.hasNewProtocol(player)){
             Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(player.getEyeLocation().getDirection().multiply(20))));
         } else {
             Util.sendPacket(player, dragon.getTeleportPacket(player.getLocation().add(0, -300, 0)));
@@ -538,7 +526,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     private static void sendWither(FakeWither wither, Player player) {
         Util.sendPacket(player, wither.getMetaPacket(wither.getWatcher()));
 
-        if(handshakeListener.hasNewProtocol(player)){
+        if(Util.hasNewProtocol(player)){
             Util.sendPacket(player, wither.getTeleportPacket(player.getLocation().add(player.getEyeLocation().getDirection().multiply(20))));
         } else {
             Util.sendPacket(player, wither.getTeleportPacket(player.getLocation().add(0, -300, 0)));
@@ -579,7 +567,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     }
 
     private static FakeDragon addDragon(Player player, String message) {
-        boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
+        boolean ver_1_8 = Util.hasNewProtocol(player) ? true : false;
         FakeDragon dragon = null;
         FakeWither wither = null;
 
@@ -597,7 +585,7 @@ public class BarAPI extends JavaPlugin implements Listener {
     }
 
     private static FakeDragon addDragon(Player player, Location loc, String message) {
-        boolean ver_1_8 = BarAPI.getHandshakeListener().hasNewProtocol(player) ? true : false;
+        boolean ver_1_8 = Util.hasNewProtocol(player) ? true : false;
         FakeDragon dragon = null;
         FakeWither wither = null;
 
