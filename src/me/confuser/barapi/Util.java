@@ -12,7 +12,6 @@ import me.confuser.barapi.nms.v1_8;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.craftbukkit.v1_7_R4.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
@@ -35,7 +34,7 @@ public class Util {
         String mcVersion = name.substring(name.lastIndexOf('.') + 1);
         String[] versions = mcVersion.split("_");
 
-        if (versions[0].equals("v1") && Integer.parseInt(versions[1]) == 7) {
+        if (versions[0].equals("v1") && Integer.parseInt(versions[1]) == 8) {
             newProtocol = true;
             // fakeDragonClass = v1_7.class;
         }
@@ -205,7 +204,6 @@ public class Util {
     }
 
     public static boolean hasNewProtocol(Player player) {
-        return ((CraftPlayer) player).getHandle().
-                playerConnection.networkManager.getVersion() > 5;
+        return true;
     }
 }
