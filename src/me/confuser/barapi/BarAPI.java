@@ -1,12 +1,10 @@
 package me.confuser.barapi;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
 import me.confuser.barapi.nms.FakeDragon;
 import me.confuser.barapi.nms.FakeWither;
-import net.gravitydevelopment.updater.Updater;
 
 import org.apache.commons.lang.Validate;
 import org.bukkit.Bukkit;
@@ -22,7 +20,6 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.mcstats.MetricsLite;
 
 /**
  * Allows plugins to safely set a health bar message.
@@ -41,16 +38,6 @@ public class BarAPI extends JavaPlugin implements Listener {
     public void onEnable() {
         getConfig().options().copyDefaults(true);
         saveConfig();
-
-        if (getConfig().getBoolean("autoUpdate"))
-            new Updater(this, 64876, getFile(), Updater.UpdateType.DEFAULT, false);
-
-        try {
-            MetricsLite metrics = new MetricsLite(this);
-            metrics.start();
-        } catch (IOException e) {
-            // Failed to submit the stats :-(
-        }
 
         getServer().getPluginManager().registerEvents(this, this);
 
